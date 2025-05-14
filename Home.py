@@ -1,5 +1,4 @@
 # import streamlit as st
-
 # st.title("🏠 Home Page")
 # st.write("Welcome to the home page of our Streamlit multipage app!")
 # st.sidebar.image("AgriLoan.png", use_container_width=True)
