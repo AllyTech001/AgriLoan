@@ -14,5 +14,5 @@ st.set_page_config(
     layout="wide"                        # "centered" or "wide"
 )
 
-st.title("Farmware Dashboard")
+st.title("AgriLoan")
 st.write("Welcome to the smart farming system.")
