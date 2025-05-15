@@ -2,94 +2,75 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
-def main():
-    st.set_page_config(page_title="Colorful Excel Data Dashboard", layout="wide")
-    st.title("🌈 Colorful Interactive Excel Dashboard")
+st.set_page_config(page_title="Loan Applicants Dashboard", layout="wide")
 
-    # Load the Excel file
-    try:
-        df = pd.read_excel('dataset.xlsx')
-    except FileNotFoundError:
-        st.error("File 'dataset.xlsx' not found in the current folder.")
-        return
+# Reload data each time the app runs or when refresh is pressed
+def load_data():
+    df = pd.read_excel("loan_dataset.xlsx")
+    df['ApplicationDate'] = pd.date_range(start='2023-01-01', periods=len(df), freq='D')
+    return df
 
-    # Show Data Preview
-    st.subheader("📋 Data Preview")
-    st.dataframe(df)
 
-    # Show Features
-    st.subheader("🧩 Features (Columns)")
-    st.write(list(df.columns))
+# Load dataset
+df = load_data()
 
-    # Show Data Types
-    st.subheader("🔍 Data Types")
-    st.write(df.dtypes)
+# Dashboard title and description
+st.title("Loan Applicants Dashboard")
+st.markdown("Explore applicant trends, financial data, and demographics with interactive charts.")
 
-    # Summary Statistics
-    st.subheader("📊 Summary Statistics")
-    st.write(df.describe(include='all').transpose())
+# Debug info: total rows loaded
+st.markdown(f"**Total Applicants:** {len(df)}")
 
-    # Missing Values
-    st.subheader("🚨 Missing Values Heatmap")
-    missing = df.isnull()
-    fig, ax = plt.subplots(figsize=(10, 3))
-    sns.heatmap(missing, cbar=False, cmap='viridis', yticklabels=False, ax=ax)
-    st.pyplot(fig)
+# Prepare date grouping columns for charts
+df['Date'] = df['ApplicationDate'].dt.date
+df['Week'] = df['ApplicationDate'].dt.to_period('W').apply(lambda r: r.start_time)
+df['Month'] = df['ApplicationDate'].dt.to_period('M').apply(lambda r: r.start_time)
 
-    # Separate numeric and categorical columns
-    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-    categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+# Metrics
+total_daily = df.groupby('Date').size().sum()
+total_weekly = df.groupby('Week').size().sum()
+total_monthly = df.groupby('Month').size().sum()
 
-    st.subheader("📈 Numeric Columns Analysis")
+col1, col2, col3 = st.columns(3)
+col1.metric("Total Daily Applicants (sum)", f"{total_daily}")
+col2.metric("Total Weekly Applicants (sum)", f"{total_weekly}")
+col3.metric("Total Monthly Applicants (sum)", f"{total_monthly}")
 
-    for col in numeric_cols:
-        st.markdown(f"### {col}")
-        fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+# Loan Amount Trend
+st.subheader("Loan Amount Trend Over Time")
+loan_time = df.groupby('ApplicationDate')['LoanAmount'].sum().reset_index()
+st.line_chart(data=loan_time, x='ApplicationDate', y='LoanAmount')
 
-        # Histogram
-        sns.histplot(df[col].dropna(), kde=True, color='skyblue', ax=axes[0])
-        axes[0].set_title(f'Histogram of {col}')
+# Education Level Distribution
+st.subheader("Applicants by Education Level")
+edu_counts = df['Education'].fillna("Unknown").value_counts()
+st.bar_chart(edu_counts)
 
-        # Boxplot
-        sns.boxplot(x=df[col], color='lightgreen', ax=axes[1])
-        axes[1].set_title(f'Boxplot of {col}')
+# Income Trend
+st.subheader("Income Trend Over Time")
+income_time = df.groupby('ApplicationDate')['Income'].mean().reset_index()
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.fill_between(income_time['ApplicationDate'], income_time['Income'], color='skyblue', alpha=0.5)
+ax.plot(income_time['ApplicationDate'], income_time['Income'], color='blue')
+ax.set_xlabel("Date")
+ax.set_ylabel("Average Income")
+st.pyplot(fig)
 
-        st.pyplot(fig)
+# Crop Produce Distribution
+st.subheader("Crop Produce Distribution")
+crop_counts = df['Crop_Produce'].value_counts()
+st.bar_chart(crop_counts)
 
-    # Correlation Heatmap
-    if len(numeric_cols) > 1:
-        st.subheader("🔥 Correlation Heatmap (Numeric Columns)")
-        corr = df[numeric_cols].corr()
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(corr, annot=True, cmap='coolwarm', ax=ax)
-        st.pyplot(fig)
+# Credit Score Distribution
+st.subheader("Credit Score Distribution")
+fig2, ax2 = plt.subplots(figsize=(10, 4))
+sns.histplot(df['CreditScore'].dropna(), bins=20, kde=True, color='green', ax=ax2)
+ax2.set_xlabel("Credit Score")
+st.pyplot(fig2)
 
-    st.subheader("📊 Categorical Columns Analysis")
-
-    for col in categorical_cols:
-        st.markdown(f"### {col}")
-        counts = df[col].value_counts().head(20)
-        fig, ax = plt.subplots(figsize=(10, 4))
-        sns.barplot(x=counts.values, y=counts.index, palette='pastel', ax=ax)
-        ax.set_title(f'Top Categories in {col}')
-        st.pyplot(fig)
-
-    # Interactive Column Exploration
-    st.sidebar.header("🔎 Explore Specific Column")
-    selected_col = st.sidebar.selectbox("Select a column", df.columns)
-
-    st.sidebar.markdown("---")
-    st.sidebar.write(f"**Basic info about {selected_col}:**")
-    st.sidebar.write(f"Data type: {df[selected_col].dtype}")
-    st.sidebar.write(f"Missing values: {df[selected_col].isnull().sum()}")
-
-    if selected_col in numeric_cols:
-        st.sidebar.write("Summary stats:")
-        st.sidebar.write(df[selected_col].describe())
-    else:
-        st.sidebar.write("Top value counts:")
-        st.sidebar.write(df[selected_col].value_counts().head(10))
-
-if __name__ == "__main__":
-    main()
+# Loan Term Distribution
+st.subheader("Loan Term Distribution")
+loan_term_counts = df['LoanTerm'].fillna("Unknown").value_counts().sort_index()
+st.bar_chart(loan_term_counts)
