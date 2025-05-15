@@ -1,21 +1,29 @@
 import streamlit as st
 from PIL import Image
 
+# Page configuration
+st.set_page_config(
+    page_title="AgriLoan",
+    layout="centered",
+    page_icon="favicon.png",
+)
 
-st.set_page_config(page_title="AgriLoan", 
-                   layout="centered",
-                   page_icon="favicon.png",)
+# Minimize vertical space above logo
+st.markdown("<div style='margin-top: -60px;'></div>", unsafe_allow_html=True)
 
-# Load the image
+# Load and display centered logo
 logo = Image.open("AgriLoan1.png")
-
-# Center the image and reduce its size to a "standard" width (e.g. 200px)
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    st.image(logo, use_container_width=False, width=200)  # Set width to a standard size (200px)
+    st.image(logo, use_container_width=False, width=180)
 
+# Reduce vertical space below logo
+st.markdown("<div style='margin-bottom: -30px;'></div>", unsafe_allow_html=True)
+
+# Page title
 st.title("Welcome to AgriLoan")
 
+# Introductory text
 st.write("""
 AgriLoan is an initiative to support smallholder farmers by offering smart, AI-based loan evaluations.
 
