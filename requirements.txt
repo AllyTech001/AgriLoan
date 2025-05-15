@@ -2,3 +2,7 @@ streamlit
 fpdf
 pandas
 openpyxl
+matplotlib
+numpy
+scipy
+seaborn
